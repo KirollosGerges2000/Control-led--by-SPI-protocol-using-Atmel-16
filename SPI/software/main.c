@@ -9,18 +9,23 @@
 #include "DIO.h"
 #include "SPI.h"
 #include "MACROS.h"
+
 int main(void)
 {
-    /* Replace with your application code */
-	INPUT_MODULE(DDRA,2);
 	
-    while (1) 
-    {
-		if (READBIT_BIT(PORTA,2))
+	DDRB &=(~(1<<0)); //switch 
+	
+ SPI_MasterInit();
+	while (1)
+	{
+		if(PINB&(1<<0))
 		{
-			SPI_sendByte('l');
-			while(READBIT_BIT(PORTA,2));
+			
+			SPI_MasterTransmit('l');
+			while(PINB&(1<<0));
 		}
-    }
+
+	
+	}
 }
 

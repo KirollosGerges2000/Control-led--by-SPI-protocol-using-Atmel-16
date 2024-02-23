@@ -3,29 +3,27 @@ software.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         0000008e  00000000  00000000  00000054  2**1
+  0 .text         000000aa  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800060  00800060  000000e2  2**0
+  1 .data         00000000  00800060  00800060  000000fe  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .comment      00000030  00000000  00000000  000000e2  2**0
+  2 .comment      00000030  00000000  00000000  000000fe  2**0
                   CONTENTS, READONLY
-  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000114  2**2
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000130  2**2
                   CONTENTS, READONLY
-  4 .debug_aranges 00000068  00000000  00000000  00000150  2**0
+  4 .debug_aranges 00000048  00000000  00000000  0000016c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000754  00000000  00000000  000001b8  2**0
+  5 .debug_info   000006a0  00000000  00000000  000001b4  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 0000064f  00000000  00000000  0000090c  2**0
+  6 .debug_abbrev 000005ed  00000000  00000000  00000854  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   0000037d  00000000  00000000  00000f5b  2**0
+  7 .debug_line   000002b4  00000000  00000000  00000e41  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  000000c4  00000000  00000000  000012d8  2**2
+  8 .debug_frame  00000058  00000000  00000000  000010f8  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    00000341  00000000  00000000  0000139c  2**0
+  9 .debug_str    00000335  00000000  00000000  00001150  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    0000013c  00000000  00000000  000016dd  2**0
-                  CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000048  00000000  00000000  00001819  2**0
+ 10 .debug_ranges 00000028  00000000  00000000  00001485  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -61,53 +59,78 @@ Disassembly of section .text:
   5c:	de bf       	out	0x3e, r29	; 62
   5e:	cd bf       	out	0x3d, r28	; 61
   60:	0e 94 36 00 	call	0x6c	; 0x6c <main>
-  64:	0c 94 45 00 	jmp	0x8a	; 0x8a <_exit>
+  64:	0c 94 53 00 	jmp	0xa6	; 0xa6 <_exit>
 
 00000068 <__bad_interrupt>:
   68:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 0000006c <main>:
-#include "SPI.h"
 #include "MACROS.h"
+
 int main(void)
 {
-    /* Replace with your application code */
-	INPUT_MODULE(DDRA,2);
-  6c:	8a b3       	in	r24, 0x1a	; 26
-  6e:	8b 7f       	andi	r24, 0xFB	; 251
-  70:	8a bb       	out	0x1a, r24	; 26
 	
-    while (1) 
-    {
-		if (READBIT_BIT(PORTA,2))
-  72:	da 9b       	sbis	0x1b, 2	; 27
-  74:	fe cf       	rjmp	.-4      	; 0x72 <main+0x6>
+	DDRB &=(~(1<<0)); //switch 
+  6c:	87 b3       	in	r24, 0x17	; 23
+  6e:	8e 7f       	andi	r24, 0xFE	; 254
+  70:	87 bb       	out	0x17, r24	; 23
+	
+ SPI_MasterInit();
+  72:	0e 94 43 00 	call	0x86	; 0x86 <SPI_MasterInit>
+	while (1)
+	{
+		if(PINB&(1<<0))
+  76:	b0 9b       	sbis	0x16, 0	; 22
+  78:	fe cf       	rjmp	.-4      	; 0x76 <main+0xa>
 		{
-			SPI_sendByte('l');
-  76:	8c e6       	ldi	r24, 0x6C	; 108
-  78:	0e 94 41 00 	call	0x82	; 0x82 <SPI_sendByte>
-			while(READBIT_BIT(PORTA,2));
-  7c:	da 99       	sbic	0x1b, 2	; 27
-  7e:	fe cf       	rjmp	.-4      	; 0x7c <main+0x10>
-  80:	f8 cf       	rjmp	.-16     	; 0x72 <main+0x6>
+			
+			SPI_MasterTransmit('l');
+  7a:	8c e6       	ldi	r24, 0x6C	; 108
+  7c:	0e 94 4f 00 	call	0x9e	; 0x9e <SPI_MasterTransmit>
+			while(PINB&(1<<0));
+  80:	b0 99       	sbic	0x16, 0	; 22
+  82:	fe cf       	rjmp	.-4      	; 0x80 <main+0x14>
+  84:	f8 cf       	rjmp	.-16     	; 0x76 <main+0xa>
 
-00000082 <SPI_sendByte>:
-	SPCR = (1<<SPE); // just enable SPI + choose SPI clock = Fosc/4
-}
+00000086 <SPI_MasterInit>:
+#include "SPI.h"
 
-void SPI_sendByte(unsigned char data)
+void SPI_MasterInit(void)
 {
-	SPDR = data; //send data by SPI
-  82:	8f b9       	out	0x0f, r24	; 15
-	while(BIT_IS_CLEAR(SPSR,SPIF)){} //wait until SPI interrupt flag=1 (data is sent correctly)
-  84:	77 9b       	sbis	0x0e, 7	; 14
-  86:	fe cf       	rjmp	.-4      	; 0x84 <SPI_sendByte+0x2>
-	//while(!(SPSR & (1<<7)));
+	/* Set MOSI and SCK output, all others input */
+	DDRB = DDRB | (1<<PB4);
+  86:	87 b3       	in	r24, 0x17	; 23
+  88:	80 61       	ori	r24, 0x10	; 16
+  8a:	87 bb       	out	0x17, r24	; 23
+	DDRB = DDRB | (1<<PB5);
+  8c:	87 b3       	in	r24, 0x17	; 23
+  8e:	80 62       	ori	r24, 0x20	; 32
+  90:	87 bb       	out	0x17, r24	; 23
+	DDRB = DDRB | (1<<PB7);
+  92:	87 b3       	in	r24, 0x17	; 23
+  94:	80 68       	ori	r24, 0x80	; 128
+  96:	87 bb       	out	0x17, r24	; 23
+	/* Enable SPI, Master, set clock rate fck/16 */
+	SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);
+  98:	81 e5       	ldi	r24, 0x51	; 81
+  9a:	8d b9       	out	0x0d, r24	; 13
+  9c:	08 95       	ret
+
+0000009e <SPI_MasterTransmit>:
 }
-  88:	08 95       	ret
+void SPI_MasterTransmit(char cData)
+{
+	/* Start transmission */
+	SPDR = cData;
+  9e:	8f b9       	out	0x0f, r24	; 15
+	/* Wait for transmission complete */
+	while(!(SPSR & (1<<SPIF)));
+  a0:	77 9b       	sbis	0x0e, 7	; 14
+  a2:	fe cf       	rjmp	.-4      	; 0xa0 <SPI_MasterTransmit+0x2>
+  a4:	08 95       	ret
 
-0000008a <_exit>:
-  8a:	f8 94       	cli
+000000a6 <_exit>:
+  a6:	f8 94       	cli
 
-0000008c <__stop_program>:
-  8c:	ff cf       	rjmp	.-2      	; 0x8c <__stop_program>
+000000a8 <__stop_program>:
+  a8:	ff cf       	rjmp	.-2      	; 0xa8 <__stop_program>

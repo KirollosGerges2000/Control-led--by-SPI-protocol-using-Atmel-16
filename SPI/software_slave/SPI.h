@@ -30,11 +30,7 @@
 /* Check if a specific bit is cleared in any register and return true if yes */
 #define BIT_IS_CLEAR(REG,BIT) ( !(REG & (1<<BIT)) )
 
-void SPI_initMaster(void);
-void SPI_initSlave(void);
-void SPI_sendByte(unsigned char data);
-unsigned char SPI_recieveByte(void);
-void SPI_SendString(const unsigned char *Str);
-void SPI_receiveString(char *Str);
+void SPI_SlaveInit(void);
+char SPI_SlaveReceive(void);
 
 #endif /* SPI_H_ */

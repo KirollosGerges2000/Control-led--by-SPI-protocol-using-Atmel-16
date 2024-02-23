@@ -3,29 +3,27 @@ software_slave.elf:     file format elf32-avr
 
 Sections:
 Idx Name          Size      VMA       LMA       File off  Algn
-  0 .text         0000009a  00000000  00000000  00000054  2**1
+  0 .text         000000b6  00000000  00000000  00000054  2**1
                   CONTENTS, ALLOC, LOAD, READONLY, CODE
-  1 .data         00000000  00800060  00800060  000000ee  2**0
+  1 .data         00000000  00800060  00800060  0000010a  2**0
                   CONTENTS, ALLOC, LOAD, DATA
-  2 .comment      00000030  00000000  00000000  000000ee  2**0
+  2 .comment      00000030  00000000  00000000  0000010a  2**0
                   CONTENTS, READONLY
-  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  00000120  2**2
+  3 .note.gnu.avr.deviceinfo 0000003c  00000000  00000000  0000013c  2**2
                   CONTENTS, READONLY
-  4 .debug_aranges 00000068  00000000  00000000  0000015c  2**0
+  4 .debug_aranges 00000048  00000000  00000000  00000178  2**0
                   CONTENTS, READONLY, DEBUGGING
-  5 .debug_info   00000762  00000000  00000000  000001c4  2**0
+  5 .debug_info   000006ab  00000000  00000000  000001c0  2**0
                   CONTENTS, READONLY, DEBUGGING
-  6 .debug_abbrev 0000065b  00000000  00000000  00000926  2**0
+  6 .debug_abbrev 000005e1  00000000  00000000  0000086b  2**0
                   CONTENTS, READONLY, DEBUGGING
-  7 .debug_line   00000389  00000000  00000000  00000f81  2**0
+  7 .debug_line   000002c0  00000000  00000000  00000e4c  2**0
                   CONTENTS, READONLY, DEBUGGING
-  8 .debug_frame  000000c4  00000000  00000000  0000130c  2**2
+  8 .debug_frame  00000058  00000000  00000000  0000110c  2**2
                   CONTENTS, READONLY, DEBUGGING
-  9 .debug_str    00000347  00000000  00000000  000013d0  2**0
+  9 .debug_str    00000332  00000000  00000000  00001164  2**0
                   CONTENTS, READONLY, DEBUGGING
- 10 .debug_loc    0000013c  00000000  00000000  00001717  2**0
-                  CONTENTS, READONLY, DEBUGGING
- 11 .debug_ranges 00000048  00000000  00000000  00001853  2**0
+ 10 .debug_ranges 00000028  00000000  00000000  00001496  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -61,60 +59,88 @@ Disassembly of section .text:
   5c:	de bf       	out	0x3e, r29	; 62
   5e:	cd bf       	out	0x3d, r28	; 61
   60:	0e 94 36 00 	call	0x6c	; 0x6c <main>
-  64:	0c 94 4b 00 	jmp	0x96	; 0x96 <_exit>
+  64:	0c 94 59 00 	jmp	0xb2	; 0xb2 <_exit>
 
 00000068 <__bad_interrupt>:
   68:	0c 94 00 00 	jmp	0	; 0x0 <__vectors>
 
 0000006c <main>:
+#include "DIO.h"
 #include "MACROS.h"
 #include "SPI.h"
 int main(void)
 {
+SPI_SlaveInit();
+  6c:	0e 94 49 00 	call	0x92	; 0x92 <SPI_SlaveInit>
     /* Replace with your application code */
-	OUTPUT_MODULE(DDRA,0);
-  6c:	8a b3       	in	r24, 0x1a	; 26
-  6e:	81 60       	ori	r24, 0x01	; 1
-  70:	8a bb       	out	0x1a, r24	; 26
-	OUTPUT_MODULE_OFF(PORTA,0);
-  72:	8b b3       	in	r24, 0x1b	; 27
-  74:	8e 7f       	andi	r24, 0xFE	; 254
-  76:	8b bb       	out	0x1b, r24	; 27
+	DDRC |=(1<<0); //Led 
+  70:	84 b3       	in	r24, 0x14	; 20
+  72:	81 60       	ori	r24, 0x01	; 1
+  74:	84 bb       	out	0x14, r24	; 20
+	PORTC &=(~(1<<0)); //initially led  is closed
+  76:	85 b3       	in	r24, 0x15	; 21
+  78:	8e 7f       	andi	r24, 0xFE	; 254
+  7a:	85 bb       	out	0x15, r24	; 21
     while (1) 
     {
-		unsigned char x =SPI_recieveByte();
-  78:	0e 94 47 00 	call	0x8e	; 0x8e <SPI_recieveByte>
-		if(x == 'l')
-  7c:	8c 36       	cpi	r24, 0x6C	; 108
-  7e:	e1 f7       	brne	.-8      	; 0x78 <main+0xc>
+		 char x =SPI_SlaveReceive();
+  7c:	0e 94 55 00 	call	0xaa	; 0xaa <SPI_SlaveReceive>
+		if(x)
+  80:	88 23       	and	r24, r24
+  82:	e1 f3       	breq	.-8      	; 0x7c <main+0x10>
 		{
-			
-TOGGLE_BIT(PORTA,0);
-  80:	2b b3       	in	r18, 0x1b	; 27
-  82:	91 e0       	ldi	r25, 0x01	; 1
-  84:	92 27       	eor	r25, r18
-  86:	9b bb       	out	0x1b, r25	; 27
+			TOGGLE_BIT(PORTC,0);
+  84:	25 b3       	in	r18, 0x15	; 21
+  86:	91 e0       	ldi	r25, 0x01	; 1
+  88:	92 27       	eor	r25, r18
+  8a:	95 bb       	out	0x15, r25	; 21
+
 while(x== 'l');
-  88:	8c 36       	cpi	r24, 0x6C	; 108
-  8a:	f1 f3       	breq	.-4      	; 0x88 <main+0x1c>
-  8c:	f5 cf       	rjmp	.-22     	; 0x78 <main+0xc>
+  8c:	8c 36       	cpi	r24, 0x6C	; 108
+  8e:	f1 f3       	breq	.-4      	; 0x8c <main+0x20>
+  90:	f5 cf       	rjmp	.-22     	; 0x7c <main+0x10>
 
-0000008e <SPI_recieveByte>:
-	//while(!(SPSR & (1<<7)));
-}
+00000092 <SPI_SlaveInit>:
+#include "SPI.h"
 
-unsigned char SPI_recieveByte(void)
+void SPI_SlaveInit(void)
 {
-   while(BIT_IS_CLEAR(SPSR,SPIF)){} //wait until SPI interrupt flag=1(data is receive correctly)
-  8e:	77 9b       	sbis	0x0e, 7	; 14
-  90:	fe cf       	rjmp	.-4      	; 0x8e <SPI_recieveByte>
-   return SPDR; //return the received byte from SPI data register
-  92:	8f b1       	in	r24, 0x0f	; 15
+	/* Set MISO output, all others input */
+	DDRB &=(~(1<<4)); //switch 
+  92:	87 b3       	in	r24, 0x17	; 23
+  94:	8f 7e       	andi	r24, 0xEF	; 239
+  96:	87 bb       	out	0x17, r24	; 23
+	DDRB &=(~(1<<5)); //switch 
+  98:	87 b3       	in	r24, 0x17	; 23
+  9a:	8f 7d       	andi	r24, 0xDF	; 223
+  9c:	87 bb       	out	0x17, r24	; 23
+	DDRB &=(~(1<<7)); //switch 
+  9e:	87 b3       	in	r24, 0x17	; 23
+  a0:	8f 77       	andi	r24, 0x7F	; 127
+  a2:	87 bb       	out	0x17, r24	; 23
+	
+	/* Enable SPI */
+	SPCR = (1<<SPE);
+  a4:	80 e4       	ldi	r24, 0x40	; 64
+  a6:	8d b9       	out	0x0d, r24	; 13
+  a8:	08 95       	ret
+
+000000aa <SPI_SlaveReceive>:
 }
-  94:	08 95       	ret
+char SPI_SlaveReceive(void)
+{
+	/* Wait for reception complete */
+	while(!(SPSR & (1<<SPIF)))
+  aa:	77 9b       	sbis	0x0e, 7	; 14
+  ac:	fe cf       	rjmp	.-4      	; 0xaa <SPI_SlaveReceive>
+	;
+	/* Return data register */
+	return SPDR;
+  ae:	8f b1       	in	r24, 0x0f	; 15
+  b0:	08 95       	ret
 
-00000096 <_exit>:
-  96:	f8 94       	cli
+000000b2 <_exit>:
+  b2:	f8 94       	cli
 
-00000098 <__stop_program>:
-  98:	ff cf       	rjmp	.-2      	; 0x98 <__stop_program>
+000000b4 <__stop_program>:
+  b4:	ff cf       	rjmp	.-2      	; 0xb4 <__stop_program>

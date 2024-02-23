@@ -11,16 +11,17 @@
 #include "SPI.h"
 int main(void)
 {
+SPI_SlaveInit();
     /* Replace with your application code */
-	OUTPUT_MODULE(DDRA,0);
-	OUTPUT_MODULE_OFF(PORTA,0);
+	DDRC |=(1<<0); //Led 
+	PORTC &=(~(1<<0)); //initially led  is closed
     while (1) 
     {
-		unsigned char x =SPI_recieveByte();
-		if(x == 'l')
+		 char x =SPI_SlaveReceive();
+		if(x)
 		{
-			
-TOGGLE_BIT(PORTA,0);
+			TOGGLE_BIT(PORTC,0);
+
 while(x== 'l');
 		}
 		
